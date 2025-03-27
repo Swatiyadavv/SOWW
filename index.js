@@ -10,7 +10,8 @@ const userRouter =  require("./Routes/userRoutes");
 const groupRouter =  require("./Routes/groupRoutes");
 const eventRouter =  require("./Routes/eventRoutes");
 const adminRoutes = require("./Routes/AdminRoutes");
-const AdminUserCrud = require('./Routes/AdminCrud')
+const AdminUserCrud = require('./Routes/AdminCrud');
+const AdminEvent = require("./Routes/AdminEvent");
 
 dbConnection();
 
@@ -19,6 +20,7 @@ app.use("/group",groupRouter);
 app.use("/event",eventRouter);
 app.use("/admin",adminRoutes);
 app.use("/adminCrud",AdminUserCrud);
+app.use("/adminEvent",AdminEvent)
 
 
 
