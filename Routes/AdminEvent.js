@@ -1,12 +1,23 @@
-const express = require('express');
-const { createEvent, getEvents, getEventById, updateEvent, deleteEvent } = require('../Controller/AdminEventContro');
+const express = require("express");
 const router = express.Router();
+const upload = require("../Middleware/upload"); 
+const eventController = require("../Controller/AdminEventContro");  // ✅ Ensure this is correct
 
-// Routes
-router.post('/', createEvent);       // Create event
-router.get('/', getEvents);          // Get all events
-router.get('/:id', getEventById);    // Get event by ID
-router.put('/:id', updateEvent);     // Update event
-router.delete('/:id', deleteEvent);  // Delete event
+// Create Event Route (with image upload)
+router.post("/create", upload.single("eventImage"), eventController.createEvent);
+
+// Get All Events
+router.get("/", eventController.getEvents);
+
+// Get Event by ID
+router.get("/:id", eventController.getEventById);
+
+// Update Event (with image upload)
+router.put("/:id", upload.single("eventImage"), eventController.updateEvent);
+
+// Delete Event
+router.delete("/:id", eventController.deleteEvent);
 
 module.exports = router;
+
+

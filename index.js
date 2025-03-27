@@ -4,7 +4,9 @@ const PORT = 8080;
 const cors = require('cors');
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended:true}));
+app.use(express.json());  // ✅ Add this
 app.use(cors());
+app.use("/uploads", express.static("uploads"));  // ✅ Add this
 const dbConnection = require("./Database/dbConnection");
 const userRouter =  require("./Routes/userRoutes");
 const groupRouter =  require("./Routes/groupRoutes");
@@ -14,7 +16,6 @@ const AdminUserCrud = require('./Routes/AdminCrud');
 const AdminEvent = require("./Routes/AdminEvent");
 
 dbConnection();
-
 app.use("/user",userRouter);
 app.use("/group",groupRouter);
 app.use("/event",eventRouter);

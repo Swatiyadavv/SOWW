@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");  
-const crypto = require("crypto");  // ✅ Fix: No "node:" prefix
+const crypto = require("crypto");  
 
 const AdminSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     authKey: { type: String, required: true, default: "admin" }
 });
