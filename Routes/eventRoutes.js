@@ -2,7 +2,8 @@ const express = require ('express')
 
 const {
   addEvent,
-  getAllEvents
+  getAllEvents,
+  getEventById
 
  }=require('../Controller/eventController');
 
@@ -15,7 +16,7 @@ const{upload}=require("../Middleware/userMiddleware");
 
 router.route("/addEvent").post( upload.single("eventPic"),addEvent);
 router.route("/getAllEvents").get(getAllEvents);
-
+router.get("/:id", getEventById);
 
 
 

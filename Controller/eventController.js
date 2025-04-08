@@ -35,6 +35,19 @@ const getAllEvents = async (req, res) => {
         res.status(500).json({ message: "Failed to fetch events", error: error.message });
     }
 };
+const getEventById = async (req, res) => {
+    const eventId = req.params.id;
+
+    try {
+        const event = await EventModel.findById(eventId);
+        if (!event) {
+            return res.status(404).json({ message: "Event not found" });
+        }
+        res.status(200).json({ message: "Success!", data: event });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch event", error: error.message });
+    }
+};
 
 
-module.exports = { addEvent,getAllEvents };
+module.exports = { addEvent,getAllEvents,getEventById };
