@@ -1,6 +1,9 @@
+
 const { createHmac } = require("crypto");
 const UserModel = require("../Model/userModel");
 const { otp, sentOtp } = require("../utils/helper");
+
+const tempUsers = new Map();
 
 const addUser = async (req, res) => {
   let { name, email, password, mobile, location, interests } = req.body;
@@ -13,48 +16,62 @@ const addUser = async (req, res) => {
         { mobile: mobile, isVerified: true },
       ],
     });
-    if (user.length === 0) {
+
+    if (user.length === 0 && !tempUsers.has(email)) {
       let code = otp(6);
       console.log(code);
-      user = await UserModel({
+
+      tempUsers.set(email, {
         name,
         email,
         password,
         mobile,
         location,
-        interests: interests,
+        interests,
         otp: code,
       });
-      sentOtp(email, code);
-      user = await user.save();
 
-      res.status(201).send({ massage: "Success  otp is send to your mail !" });
+      sentOtp(email, code);
+
+      res.status(201).send({ massage: "Success! OTP sent to your mail!" });
     } else {
       res
         .status(401)
-        .send({ massage: "Email is already exist", data: req.body });
+        .send({ massage: "Email already exists", data: req.body });
     }
   } catch (error) {
-    res.status(400).send({ massage: "Failed !", data: "", error: error });
+    res.status(400).send({ massage: "Failed!", data: "", error: error });
   }
 };
 
 const verifySignupOtp = async (req, res) => {
   let { otp } = req.body;
-  try {
-    let user = await UserModel.findOne({ email: req.params.email });
-    if (user.otp == otp) {
-      await UserModel.updateOne(
-        { email: req.params.email },
-        { $set: { isVerified: true, otp: null } }
-      );
 
-      res.status(200).send({ message: "otp verified !", data: user });
+  try {
+    const email = req.params.email;
+    const tempUser = tempUsers.get(email);
+
+    if (!tempUser) {
+      return res.status(404).send({ message: "OTP expired or invalid!" });
+    }
+
+    if (tempUser.otp == otp) {
+      const user = new UserModel({
+        ...tempUser,
+        isVerified: true,
+        otp: null,
+      });
+
+      const savedUser = await user.save();
+      tempUsers.delete(email);
+
+      res.status(200).send({ message: "OTP verified!", data: savedUser });
+    } else {
+      res.status(400).send({ message: "Incorrect OTP!" });
     }
   } catch (error) {
-    res.status(400).send({ message: "Failed !", data: "", error: error });
+    res.status(400).send({ message: "Failed!", data: "", error: error });
     console.log(error);
-    
   }
 };
 
@@ -89,24 +106,6 @@ const updateUserName = async (req, res) => {
   }
 };
 
-// const deleteUserById = async (req, res) => {
-//   const { userId } = req.params;
-
-//   try {
-
-//     const user = await UserModel.findByIdAndDelete(userId);
-
-//     if (!user) {
-//       return res.status(404).send({ message: "User not found!" });
-//     }
-
-//     res.status(200).send({ message: "User deleted successfully", data: user });
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).send({ message: "Error deleting user", error: error });
-//   }
-// };
-
 const login = async (req, res) => {
   try {
     const { email } = req.body;
@@ -122,11 +121,11 @@ const login = async (req, res) => {
     );
     res
       .status(200)
-      .send({ message: "login Success !", data: { token: token } });
+      .send({ message: "login Success!", data: { token: token } });
   } catch (error) {
     res
       .status(400)
-      .send({ message: "Login Failed !", data: "", Error: "Login Failed" });
+      .send({ message: "Login Failed!", data: "", Error: "Login Failed" });
   }
 };
 
@@ -134,7 +133,7 @@ const forgotPassword = async (req, res) => {
   try {
     let user = await UserModel.findOne({ email: req.body.email });
     if (!user) {
-      res.status(400).send({ message: "request   Failed ! ", data: "" });
+      res.status(400).send({ message: "Request Failed!", data: "" });
     } else {
       let code = otp(6);
       console.log(code);
@@ -143,12 +142,12 @@ const forgotPassword = async (req, res) => {
         { $set: { otp: code } }
       );
       sentOtp(user.email, code);
-      res.status(200).send({ message: "otp sent !", data: data });
+      res.status(200).send({ message: "OTP sent!", data: data });
     }
   } catch (error) {
     res
       .status(400)
-      .send({ message: "request   Failed ! ", data: "", error: error });
+      .send({ message: "Request Failed!", data: "", error: error });
   }
 };
 
@@ -156,14 +155,14 @@ const verifyOtp = async (req, res) => {
   try {
     let userData = await UserModel.findOne({ email: req.params.email });
     if (userData.otp == req.body.otp) {
-      res.status(200).send({ message: "otp verified !", data: userData });
+      res.status(200).send({ message: "OTP verified!", data: userData });
     } else {
-      res.status(400).send({ message: "request   Failed ! ", data: "" });
+      res.status(400).send({ message: "Incorrect OTP!", data: "" });
     }
   } catch (error) {
     res
       .status(400)
-      .send({ message: "request   Failed ! ", data: "", error: error });
+      .send({ message: "Request Failed!", data: "", error: error });
   }
 };
 
@@ -180,12 +179,12 @@ const resetPassword = async (req, res) => {
       },
       { $set: { password: hashPassword } }
     );
-    res.status(200).send({ message: "password updated !", data: data });
+    res.status(200).send({ message: "Password updated!", data: data });
   } catch (error) {
     console.log(error);
     res
       .status(400)
-      .send({ message: "request   Failed ! ", data: "", error: error });
+      .send({ message: "Request Failed!", data: "", error: error });
   }
 };
 
@@ -222,6 +221,23 @@ const addIntersts = async (req, res) => {
   }
 };
 
+const getUserById = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await UserModel.findById(userId);
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found!" });
+    }
+
+    res.status(200).send({ message: "User fetched successfully!", data: user });
+  } catch (error) {
+    console.log("Error fetching user by ID:", error);
+    res.status(500).send({ message: "Failed to fetch user", error });
+  }
+};
+
 module.exports = {
   addUser,
   getUser,
@@ -232,4 +248,5 @@ module.exports = {
   addIntersts,
   resetPassword,
   verifySignupOtp,
+  getUserById
 };

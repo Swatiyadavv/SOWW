@@ -10,6 +10,7 @@ const addEvent = async (req, res) => {
         location: req.body.location,
         slots: req.body.slots,
         slotPrice: req.body.slotPrice,
+        eventType: req.body.eventType,
         eventPic: req.file ? req.file.filename : ""
     };
 
@@ -48,6 +49,46 @@ const getEventById = async (req, res) => {
         res.status(500).json({ message: "Failed to fetch event", error: error.message });
     }
 };
+const filterEvents = async (req, res) => {
+    const type = req.params.type;
+    const today = new Date();
+    let filter = {};
+
+    if (type === "Today") {
+        const start = new Date(today.setHours(0, 0, 0, 0));
+        const end = new Date(today.setHours(23, 59, 59, 999));
+        filter.eventStartDate = { $gte: start, $lte: end };
+
+    } else if (type === "Tomorrow") {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const start = new Date(tomorrow.setHours(0, 0, 0, 0));
+        const end = new Date(tomorrow.setHours(23, 59, 59, 999));
+        filter.eventStartDate = { $gte: start, $lte: end };
+
+    } else if (type === "ThisWeekend") {
+        const saturday = new Date();
+        const sunday = new Date();
+        saturday.setDate(today.getDate() + (6 - today.getDay()));
+        sunday.setDate(saturday.getDate() + 1);
+        const start = new Date(saturday.setHours(0, 0, 0, 0));
+        const end = new Date(sunday.setHours(23, 59, 59, 999));
+        filter.eventStartDate = { $gte: start, $lte: end };
+
+    } else if (type === "Free") {
+        filter.slotPrice = 0;
+
+    } else {
+        filter = {}; // All events
+    }
+
+    try {
+        const events = await EventModel.find(filter);
+        res.status(200).json({ message: `Filtered by ${type}`, data: events });
+    } catch (error) {
+        res.status(500).json({ message: "Error filtering events", error: error.message });
+    }
+};
 
 
-module.exports = { addEvent,getAllEvents,getEventById };
+module.exports = { addEvent,getAllEvents,getEventById ,filterEvents};

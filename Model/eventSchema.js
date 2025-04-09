@@ -41,6 +41,11 @@ const eventSchema = new mongoose.Schema({
         type: String,
         default: null,
     },
+    eventType:{
+        type:String,
+        enum:['All','Today','Tomorrow','ThisWeekend','Free'],
+        default:'All',
+    }
 }, {
     timestamps: true
 });
